@@ -10,6 +10,8 @@ class SupplierScreen extends StatefulWidget {
 
 class _SupplierScreenState extends State<SupplierScreen> {
   List<dynamic> supplierList = [];
+  List<dynamic> filteredSupplierList = [];
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -24,12 +26,28 @@ class _SupplierScreenState extends State<SupplierScreen> {
       if (response.statusCode == 200) {
         setState(() {
           supplierList = json.decode(response.body);
+          filteredSupplierList = supplierList; // Set the filtered list to all data initially
         });
       } else {
         throw Exception('Gagal mengambil data supplier');
       }
     } catch (e) {
       print(e);
+    }
+  }
+
+  // Fungsi untuk filter supplier berdasarkan nama
+  void filterSupplier(String query) {
+    if (query.isNotEmpty) {
+      setState(() {
+        filteredSupplierList = supplierList
+            .where((supplier) => supplier['NAMA'].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      });
+    } else {
+      setState(() {
+        filteredSupplierList = supplierList; // Jika tidak ada query, tampilkan semua supplier
+      });
     }
   }
 
@@ -71,34 +89,91 @@ class _SupplierScreenState extends State<SupplierScreen> {
     }
   }
 
+  // Fungsi untuk mengedit supplier
+  Future<void> _editSupplier(int idSup, String nama, String alamat, String nohp) async {
+    try {
+      final response = await http.put(
+        Uri.parse(AppConfig.baseUrl + 'supplier.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'IDSUP': idSup,
+          'NAMA': nama,
+          'ALAMAT': alamat,
+          'NOHP': nohp,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        fetchSupplierData(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Supplier berhasil diperbarui")),
+        );
+      } else {
+        throw Exception('Gagal memperbarui supplier');
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Supplier"),
       ),
-      body: supplierList.isEmpty
-          ? Center(child: CircularProgressIndicator()) // Loading indicator
-          : ListView.builder(
-        itemCount: supplierList.length,
-        itemBuilder: (context, index) {
-          final item = supplierList[index];
-          return ListTile(
-            title: Text(item['NAMA']),
-            subtitle: Text('Alamat: ${item['ALAMAT']} - No HP: ${item['NOHP']}'),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () {
-                // Hapus supplier
-                deleteSupplier(item['IDSUP']);
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              onChanged: (query) {
+                filterSupplier(query); // Menjalankan fungsi filter saat input berubah
+              },
+              decoration: InputDecoration(
+                labelText: 'Cari Supplier',
+                suffixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: filteredSupplierList.isEmpty
+                ? Center(child: CircularProgressIndicator()) // Loading indicator
+                : ListView.builder(
+              itemCount: filteredSupplierList.length,
+              itemBuilder: (context, index) {
+                final item = filteredSupplierList[index];
+                return ListTile(
+                  title: Text(item['NAMA']),
+                  subtitle: Text('Alamat: ${item['ALAMAT']} \nNo HP: ${item['NOHP']}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          _showEditSupplierDialog(context, item['IDSUP']);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          deleteSupplier(item['IDSUP']);
+                        },
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddSupplierDialog(context);
+          _showAddSupplierDialog(context); // Menampilkan dialog tambah supplier
         },
         child: Icon(Icons.add),
         backgroundColor: Colors.blue,
@@ -144,6 +219,63 @@ class _SupplierScreenState extends State<SupplierScreen> {
               Navigator.pop(context);
             },
             child: Text("Tambah"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Batal"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Fungsi untuk menampilkan dialog edit supplier
+  void _showEditSupplierDialog(BuildContext context, int idSup) {
+    final namaController = TextEditingController();
+    final alamatController = TextEditingController();
+    final nohpController = TextEditingController();
+
+    // Mengisi controller dengan data supplier yang akan diedit
+    final supplier = supplierList.firstWhere((supplier) => supplier['IDSUP'] == idSup);
+    namaController.text = supplier['NAMA'];
+    alamatController.text = supplier['ALAMAT'];
+    nohpController.text = supplier['NOHP'];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Edit Supplier"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: namaController,
+              decoration: InputDecoration(labelText: "Nama Supplier"),
+            ),
+            TextField(
+              controller: alamatController,
+              decoration: InputDecoration(labelText: "Alamat"),
+            ),
+            TextField(
+              controller: nohpController,
+              decoration: InputDecoration(labelText: "No HP"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _editSupplier(
+                idSup,
+                namaController.text,
+                alamatController.text,
+                nohpController.text,
+              );
+              Navigator.pop(context);
+            },
+            child: Text("Perbarui"),
           ),
           TextButton(
             onPressed: () {
