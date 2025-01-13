@@ -43,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
+                SizedBox(height: 200), // Jarak sebelum tombol menu
                 // Tombol Barang dengan Animasi
                 AnimatedOpacity(
                   opacity: _isVisible ? 1.0 : 0.0,
