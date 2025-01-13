@@ -196,6 +196,8 @@ class _BarangScreenState extends State<BarangScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Barang"),
+        elevation: 5.0,
+        backgroundColor: Colors.blueAccent,
         actions: [
           IconButton(
             icon: Icon(Icons.sort),
