@@ -36,7 +36,6 @@ class _SupplierScreenState extends State<SupplierScreen> {
     }
   }
 
-  // Fungsi untuk filter supplier berdasarkan nama
   void filterSupplier(String query) {
     if (query.isNotEmpty) {
       setState(() {
@@ -46,7 +45,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
       });
     } else {
       setState(() {
-        filteredSupplierList = supplierList; // Jika tidak ada query, tampilkan semua supplier
+        filteredSupplierList = supplierList;
       });
     }
   }
@@ -89,7 +88,6 @@ class _SupplierScreenState extends State<SupplierScreen> {
     }
   }
 
-  // Fungsi untuk mengedit supplier
   Future<void> _editSupplier(int idSup, String nama, String alamat, String nohp) async {
     try {
       final response = await http.put(
@@ -121,6 +119,8 @@ class _SupplierScreenState extends State<SupplierScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Supplier"),
+        elevation: 5.0,
+        backgroundColor: Colors.blueAccent,
       ),
       body: Column(
         children: [
@@ -135,6 +135,9 @@ class _SupplierScreenState extends State<SupplierScreen> {
                 labelText: 'Cari Supplier',
                 suffixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blueAccent, width: 2),
+                ),
               ),
             ),
           ),
@@ -145,25 +148,39 @@ class _SupplierScreenState extends State<SupplierScreen> {
               itemCount: filteredSupplierList.length,
               itemBuilder: (context, index) {
                 final item = filteredSupplierList[index];
-                return ListTile(
-                  title: Text(item['NAMA']),
-                  subtitle: Text('Alamat: ${item['ALAMAT']} \nNo HP: ${item['NOHP']}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          _showEditSupplierDialog(context, item['IDSUP']);
-                        },
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                  child: Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.all(15),
+                      title: Text(
+                        item['NAMA'],
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          deleteSupplier(item['IDSUP']);
-                        },
+                      subtitle: Text(
+                        'Alamat: ${item['ALAMAT']} \nNo HP: ${item['NOHP']}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
-                    ],
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () {
+                              _showEditSupplierDialog(context, item['IDSUP']);
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              deleteSupplier(item['IDSUP']);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
@@ -176,12 +193,11 @@ class _SupplierScreenState extends State<SupplierScreen> {
           _showAddSupplierDialog(context); // Menampilkan dialog tambah supplier
         },
         child: Icon(Icons.add),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blueAccent,
       ),
     );
   }
 
-  // Dialog untuk menambahkan supplier baru
   void _showAddSupplierDialog(BuildContext context) {
     final namaController = TextEditingController();
     final alamatController = TextEditingController();
@@ -231,13 +247,11 @@ class _SupplierScreenState extends State<SupplierScreen> {
     );
   }
 
-  // Fungsi untuk menampilkan dialog edit supplier
   void _showEditSupplierDialog(BuildContext context, int idSup) {
     final namaController = TextEditingController();
     final alamatController = TextEditingController();
     final nohpController = TextEditingController();
 
-    // Mengisi controller dengan data supplier yang akan diedit
     final supplier = supplierList.firstWhere((supplier) => supplier['IDSUP'] == idSup);
     namaController.text = supplier['NAMA'];
     alamatController.text = supplier['ALAMAT'];
