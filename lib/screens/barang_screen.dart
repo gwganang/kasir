@@ -12,6 +12,7 @@ class _BarangScreenState extends State<BarangScreen> {
   List<dynamic> barangList = [];
   List<dynamic> filteredBarangList = [];
   TextEditingController searchController = TextEditingController();
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -20,39 +21,47 @@ class _BarangScreenState extends State<BarangScreen> {
   }
 
   Future<void> fetchBarangData() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final response = await http.get(Uri.parse(AppConfig.baseUrl + 'barang.php'));
 
       if (response.statusCode == 200) {
         setState(() {
           barangList = json.decode(response.body);
-          filteredBarangList = barangList; // Set the filtered list to all data initially
+          filteredBarangList = barangList;
         });
       } else {
         throw Exception('Gagal mengambil data barang');
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   // Fungsi untuk filter barang berdasarkan nama atau barcode
   void filterBarang(String query) {
-    if (query.isNotEmpty) {
-      setState(() {
-        filteredBarangList = barangList
-            .where((barang) => barang['NAMA'].toLowerCase().contains(query.toLowerCase()) || barang['NOBARCODE'].contains(query))
-            .toList();
-      });
-    } else {
-      setState(() {
-        filteredBarangList = barangList; // Jika tidak ada query, tampilkan semua barang
-      });
-    }
+    setState(() {
+      filteredBarangList = barangList.where((barang) {
+        return barang['NAMA'].toLowerCase().contains(query.toLowerCase()) || barang['NOBARCODE'].contains(query);
+      }).toList();
+    });
   }
 
   // Fungsi untuk menambah barang
   Future<void> addBarang(String noBarcode, String nama, double harga, int stok) async {
+    if (noBarcode.isEmpty || nama.isEmpty || harga <= 0 || stok < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Input tidak valid")));
+      return;
+    }
+    setState(() {
+      isLoading = true;
+    });
     try {
       final response = await http.post(
         Uri.parse(AppConfig.baseUrl + 'barang.php'),
@@ -67,16 +76,28 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil ditambah")));
       } else {
         throw Exception('Gagal menambah barang');
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   // Fungsi untuk mengedit barang
   Future<void> _editBarang(String noBarcode, String nama, double harga, int stok) async {
+    if (nama.isEmpty || harga <= 0 || stok < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Input tidak valid")));
+      return;
+    }
+    setState(() {
+      isLoading = true;
+    });
     try {
       final response = await http.put(
         Uri.parse(AppConfig.baseUrl + 'barang.php'),
@@ -91,19 +112,24 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Barang berhasil diperbarui")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil diperbarui")));
       } else {
         throw Exception('Gagal memperbarui barang');
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   // Fungsi untuk menghapus barang
   Future<void> deleteBarang(String noBarcode) async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final response = await http.delete(
         Uri.parse(AppConfig.baseUrl + 'barang.php?NOBARCODE=$noBarcode'),
@@ -111,11 +137,16 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil dihapus")));
       } else {
         throw Exception('Gagal menghapus barang');
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -130,6 +161,34 @@ class _BarangScreenState extends State<BarangScreen> {
         filteredBarangList.sort((a, b) => b['STOK'].compareTo(a['STOK']));
       }
     });
+  }
+
+  // Dialog konfirmasi sebelum menghapus barang
+  void _showDeleteConfirmationDialog(BuildContext context, String noBarcode) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Konfirmasi Penghapusan"),
+          content: Text("Apakah Anda yakin ingin menghapus barang ini?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () {
+                deleteBarang(noBarcode);
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Hapus"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -179,68 +238,106 @@ class _BarangScreenState extends State<BarangScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              onChanged: (query) {
-                filterBarang(query); // Menjalankan fungsi filter saat input berubah
-              },
-              decoration: InputDecoration(
-                labelText: 'Cari Barang',
-                suffixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator()) // Display loading indicator
+          : Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: TextField(
+                controller: searchController,
+                onChanged: (query) {
+                  filterBarang(query);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Cari Barang',
+                  suffixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: filteredBarangList.isEmpty
-                ? Center(child: CircularProgressIndicator()) // Loading indicator
-                : ListView.builder(
-              itemCount: filteredBarangList.length,
-              itemBuilder: (context, index) {
-                final item = filteredBarangList[index];
-                return ListTile(
-                  title: Text(item['NAMA']),
-                  subtitle: Row(
-                    children: [
-                      Text('Harga: ${item['HARGA']} - '),
-                      Text(
-                        'Stok: ${item['STOK']}',
-                        style: TextStyle(
-                          color: item['STOK'] < 25 ? Colors.red : Colors.black, // Warna merah jika stok < 25
-                        ),
+            Expanded(
+              child: filteredBarangList.isEmpty
+                  ? Center(child: Text("No data available"))
+                  : GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // Jumlah kolom
+                  crossAxisSpacing: 10.0, // Jarak antar kolom
+                  mainAxisSpacing: 10.0, // Jarak antar baris
+                  childAspectRatio: 1.25, // Perbandingan tinggi dan lebar
+                ),
+                itemCount: filteredBarangList.length,
+                itemBuilder: (context, index) {
+                  final item = filteredBarangList[index];
+                  bool isLowStock = item['STOK'] < 25;
+
+                  return Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    color: Colors.blueGrey.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center, // Menjaga konten di tengah secara vertikal
+                        crossAxisAlignment: CrossAxisAlignment.center, // Menjaga konten di tengah secara horizontal
+                        children: [
+                          Text(
+                            item['NAMA'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.blueGrey.shade900,
+                            ),
+                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Harga: ${item['HARGA']}',
+                            style: TextStyle(
+                              color: Colors.blueGrey.shade900,
+                            ),
+                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                          ),
+                          Text(
+                            'Stok: ${item['STOK']}',
+                            style: TextStyle(
+                              color: isLowStock ? Colors.red : Colors.blueGrey.shade900,
+                            ),
+                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                          ),
+                          Spacer(), // Memberikan ruang kosong agar konten terpusat
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center, // Mengatur tombol edit dan delete agar terpusat
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  _showEditBarangDialog(context, item['NOBARCODE']);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  _showDeleteConfirmationDialog(context, item['NOBARCODE']);
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          _showEditBarangDialog(context, item['NOBARCODE']);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          deleteBarang(item['NOBARCODE']);
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddBarangDialog(context); // Menampilkan dialog tambah barang
+          _showAddBarangDialog(context);
         },
         child: Icon(Icons.add),
         backgroundColor: Colors.blue,
@@ -285,11 +382,12 @@ class _BarangScreenState extends State<BarangScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              // Perform validation and then add barang
               addBarang(
                 noBarcodeController.text,
                 namaController.text,
-                double.parse(hargaController.text),
-                int.parse(stokController.text),
+                double.tryParse(hargaController.text) ?? 0.0,
+                int.tryParse(stokController.text) ?? 0,
               );
               Navigator.pop(context);
             },
@@ -312,8 +410,8 @@ class _BarangScreenState extends State<BarangScreen> {
     final hargaController = TextEditingController();
     final stokController = TextEditingController();
 
-    // Mengisi controller dengan data barang yang akan diedit
     final barang = barangList.firstWhere((barang) => barang['NOBARCODE'] == noBarcode);
+
     namaController.text = barang['NAMA'];
     hargaController.text = barang['HARGA'].toString();
     stokController.text = barang['STOK'].toString();
@@ -352,7 +450,7 @@ class _BarangScreenState extends State<BarangScreen> {
               );
               Navigator.pop(context);
             },
-            child: Text("Perbarui"),
+            child: Text("Simpan"),
           ),
           TextButton(
             onPressed: () {
