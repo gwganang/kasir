@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Center(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -115,53 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 30),
 
                 // "Masuk Aplikasi" Button with InkWell for Interaction
-                AnimatedOpacity(
-                  opacity: _isVisible ? 1.0 : 0.0,
-                  duration: Duration(seconds: 1),
-                  curve: Curves.easeIn,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/dashboard');
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    splashColor: Colors.white24,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            offset: Offset(2, 4),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.login, color: Colors.white),
-                          SizedBox(width: 10),
-                          Text(
-                            'Masuk Aplikasi',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                CustomButton(
+                  text: 'Masuk Aplikasi',
+                  icon: Icons.login,
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/dashboard');
+                  },
                 ),
                 SizedBox(height: 20),
-
-                // Add responsive padding and elements for smaller screens
-                MediaQuery.of(context).size.width < 600
-                    ? SizedBox(height: 20)
-                    : Container(),
               ],
             ),
           ),
