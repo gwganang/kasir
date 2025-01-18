@@ -11,28 +11,31 @@ class PenjualanScreen extends StatefulWidget {
 class _PenjualanScreenState extends State<PenjualanScreen> {
   List<dynamic> penjualanList = [];
   List<dynamic> barangList = [];
-  String? selectedBarang;
-  TextEditingController barcodeController = TextEditingController();
-  TextEditingController namaBarangController = TextEditingController();
+  List<dynamic> filteredPenjualanList = [];
+  TextEditingController searchController = TextEditingController();
   TextEditingController jumlahController = TextEditingController();
+  String selectedBarang = '';
+  String barcode = '';
+  String hargaSatuan = '';
+  int jumlah = 1;  // Initial quantity is set to 1
 
   @override
   void initState() {
     super.initState();
     fetchPenjualanData();
-    fetchBarangData();
+    fetchBarangData(); // Load barang data for dropdown
   }
 
   Future<void> fetchPenjualanData() async {
     try {
       final response = await http.get(Uri.parse(AppConfig.baseUrl + 'penjualan.php'));
-
       if (response.statusCode == 200) {
         setState(() {
           penjualanList = json.decode(response.body);
+          filteredPenjualanList = penjualanList;
         });
       } else {
-        throw Exception('Failed to load penjualan data');
+        throw Exception('Failed to load penjualan');
       }
     } catch (e) {
       print(e);
@@ -42,16 +45,29 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
   Future<void> fetchBarangData() async {
     try {
       final response = await http.get(Uri.parse(AppConfig.baseUrl + 'barang.php'));
-
       if (response.statusCode == 200) {
         setState(() {
           barangList = json.decode(response.body);
         });
       } else {
-        throw Exception('Failed to load barang data');
+        throw Exception('Failed to load barang');
       }
     } catch (e) {
       print(e);
+    }
+  }
+
+  void filterPenjualan(String query) {
+    if (query.isNotEmpty) {
+      setState(() {
+        filteredPenjualanList = penjualanList
+            .where((penjualan) => penjualan['BARANG'].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      });
+    } else {
+      setState(() {
+        filteredPenjualanList = penjualanList;
+      });
     }
   }
 
@@ -61,117 +77,230 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
         Uri.parse(AppConfig.baseUrl + 'penjualan.php'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'NOBARCODE': barcodeController.text,
-          'JUMLAH': jumlahController.text,
+          'NOBARCODE': barcode,
+          'JUMLAH': jumlah.toString(),
         }),
       );
-
       if (response.statusCode == 200) {
-        fetchPenjualanData(); // Refresh the list after adding
-        print('Penjualan added successfully');
+        fetchPenjualanData(); // Refresh the list
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Penjualan berhasil ditambahkan')));
       } else {
-        throw Exception('Failed to add penjualan');
+        throw Exception('Gagal menambah penjualan');
       }
     } catch (e) {
       print(e);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi kesalahan!')));
     }
   }
 
-  void onBarangChanged(String? value) {
-    if (value != null) {
-      final selected = barangList.firstWhere((item) => item['NOBARCODE'] == value);
-      setState(() {
-        selectedBarang = value;
-        barcodeController.text = selected['NOBARCODE'];
-        namaBarangController.text = selected['NAMA'];
-      });
-    }
+  void showTambahPenjualanDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Tambah Penjualan'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButton<String>(
+                    value: selectedBarang.isEmpty ? null : selectedBarang,
+                    hint: Text('Pilih Barang'),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedBarang = newValue!;
+                        var selectedItem = barangList.firstWhere((barang) => barang['NOBARCODE'] == selectedBarang);
+                        barcode = selectedItem['NOBARCODE'];
+                        hargaSatuan = selectedItem['HARGA'].toString();
+                      });
+                    },
+                    items: barangList.map<DropdownMenuItem<String>>((dynamic barang) {
+                      return DropdownMenuItem<String>(
+                        value: barang['NOBARCODE'],
+                        child: Text(barang['NAMA']),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 16),
+                  Text('No Barcode: $barcode', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 16),
+                  Text('Harga Satuan: Rp $hargaSatuan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove, color: Colors.black),  // Set icon color to black
+                        onPressed: () {
+                          setState(() {
+                            if (jumlah > 1) jumlah--;
+                          });
+                        },
+                      ),
+                      Text(
+                        '$jumlah',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.add, color: Colors.black),  // Set icon color to black
+                        onPressed: () {
+                          setState(() {
+                            jumlah++;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Reset the form when canceled
+                setState(() {
+                  selectedBarang = '';
+                  barcode = '';
+                  hargaSatuan = '';
+                  jumlah = 1; // Reset quantity to 1
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (selectedBarang.isNotEmpty && jumlah > 0) {
+                  addPenjualan();
+                  // Reset the form after successful addition
+                  setState(() {
+                    selectedBarang = '';
+                    barcode = '';
+                    hargaSatuan = '';
+                    jumlah = 1; // Reset quantity to 1
+                  });
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Harap isi semua data')));
+                }
+              },
+              child: Text('Tambah'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showPenjualanDetails(Map<String, dynamic> penjualan) {
+    double total = double.tryParse(penjualan['TOTAL'].toString()) ?? 0.0;
+    String formattedTotal = total.toStringAsFixed(2).endsWith('.00') ? total.toStringAsFixed(0) : total.toStringAsFixed(2);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Detail Penjualan', style: TextStyle(color: Colors.black)),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('No Nota: ${penjualan['NONOTA']}', style: TextStyle(color: Colors.black)),
+              SizedBox(height: 8),
+              Text('Nama Barang: ${penjualan['BARANG']}', style: TextStyle(color: Colors.black)),
+              SizedBox(height: 8),
+              Text('Jumlah: ${penjualan['JUMLAH']}', style: TextStyle(color: Colors.black)),
+              SizedBox(height: 8),
+              Text('Total: Rp $formattedTotal', style: TextStyle(color: Colors.black)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Tutup', style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Penjualan'),
+        title: Text('Data Penjualan'),
+        backgroundColor: Colors.blueAccent,
       ),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Tambah Transaksi Penjualan'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Dropdown for selecting Barang
-                      DropdownButton<String>(
-                        hint: Text('Pilih Barang'),
-                        value: selectedBarang,
-                        onChanged: onBarangChanged,
-                        items: barangList.map<DropdownMenuItem<String>>((item) {
-                          return DropdownMenuItem<String>(
-                            value: item['NOBARCODE'],
-                            child: Text(item['NAMA']),
-                          );
-                        }).toList(),
-                      ),
-                      // Auto-filled Name of Barang
-                      TextField(
-                        controller: namaBarangController,
-                        decoration: InputDecoration(labelText: 'Nama Barang'),
-                        enabled: false,  // Disabling editing for the name
-                      ),
-                      // Auto-filled Barcode Number
-                      TextField(
-                        controller: barcodeController,
-                        decoration: InputDecoration(labelText: 'No Barcode'),
-                        enabled: false,  // Disabling editing for the barcode
-                      ),
-                      // Input for Quantity
-                      TextField(
-                        controller: jumlahController,
-                        decoration: InputDecoration(labelText: 'Jumlah'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        addPenjualan();
-                        Navigator.of(context).pop();
-                      },
-                      child: Text('Simpan'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            child: Text('Tambah Transaksi'),
-          ),
-          Expanded(
-            child: penjualanList.isEmpty
-                ? Center(child: CircularProgressIndicator())  // Loading indicator
-                : ListView.builder(
-              itemCount: penjualanList.length,
-              itemBuilder: (context, index) {
-                final item = penjualanList[index];
-                return ListTile(
-                  title: Text(item['BARANG']),
-                  subtitle: Text('Jumlah: ${item['JUMLAH']}'),
-                );
-              },
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: searchController,
+              onChanged: filterPenjualan,
+              decoration: InputDecoration(
+                labelText: 'Cari Barang',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.search),
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 16),
+            Expanded(
+              child: filteredPenjualanList.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                itemCount: filteredPenjualanList.length,
+                itemBuilder: (context, index) {
+                  final penjualan = filteredPenjualanList[index];
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.all(16.0),
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('No Nota: ${penjualan['NONOTA']}', style: TextStyle(fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          Text('Nama Barang: ${penjualan['BARANG']}'),
+                          SizedBox(height: 8),
+                          Text('Jumlah: ${penjualan['JUMLAH']}'),
+                        ],
+                      ),
+                      trailing: Icon(Icons.arrow_forward_ios, size: 16.0),
+                      onTap: () => showPenjualanDetails(penjualan),
+                    ),
+                  );
+                },
+              ),
+            ),
+            ElevatedButton(
+              onPressed: showTambahPenjualanDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: EdgeInsets.symmetric(vertical: 15.0),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+              ),
+              child: SizedBox(
+                width: double.infinity,  // Makes the button span the full width
+                child: Text(
+                  'Tambah Penjualan',
+                  textAlign: TextAlign.center,  // Ensures the text is centered
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
