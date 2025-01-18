@@ -25,7 +25,8 @@ class _BarangScreenState extends State<BarangScreen> {
       isLoading = true;
     });
     try {
-      final response = await http.get(Uri.parse(AppConfig.baseUrl + 'barang.php'));
+      final response = await http.get(
+          Uri.parse(AppConfig.baseUrl + 'barang.php'));
 
       if (response.statusCode == 200) {
         setState(() {
@@ -36,7 +37,8 @@ class _BarangScreenState extends State<BarangScreen> {
         throw Exception('Gagal mengambil data barang');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         isLoading = false;
@@ -48,15 +50,18 @@ class _BarangScreenState extends State<BarangScreen> {
   void filterBarang(String query) {
     setState(() {
       filteredBarangList = barangList.where((barang) {
-        return barang['NAMA'].toLowerCase().contains(query.toLowerCase()) || barang['NOBARCODE'].contains(query);
+        return barang['NAMA'].toLowerCase().contains(query.toLowerCase()) ||
+            barang['NOBARCODE'].contains(query);
       }).toList();
     });
   }
 
   // Fungsi untuk menambah barang
-  Future<void> addBarang(String noBarcode, String nama, double harga, int stok) async {
+  Future<void> addBarang(String noBarcode, String nama, double harga,
+      int stok) async {
     if (noBarcode.isEmpty || nama.isEmpty || harga <= 0 || stok < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Input tidak valid")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Input tidak valid")));
       return;
     }
     setState(() {
@@ -76,12 +81,13 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil ditambah")));
+        _showSuccessSnackbar("Barang berhasil ditambah");
       } else {
         throw Exception('Gagal menambah barang');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         isLoading = false;
@@ -90,9 +96,11 @@ class _BarangScreenState extends State<BarangScreen> {
   }
 
   // Fungsi untuk mengedit barang
-  Future<void> _editBarang(String noBarcode, String nama, double harga, int stok) async {
+  Future<void> _editBarang(String noBarcode, String nama, double harga,
+      int stok) async {
     if (nama.isEmpty || harga <= 0 || stok < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Input tidak valid")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Input tidak valid")));
       return;
     }
     setState(() {
@@ -112,12 +120,13 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil diperbarui")));
+        _showSuccessSnackbar("Data barang berhasil diperbarui");
       } else {
-        throw Exception('Gagal memperbarui barang');
+        throw Exception('Gagal memperbarui data barang');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         isLoading = false;
@@ -137,12 +146,13 @@ class _BarangScreenState extends State<BarangScreen> {
 
       if (response.statusCode == 200) {
         fetchBarangData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Barang berhasil dihapus")));
+        _showSuccessSnackbar("Data barang berhasil dihapus");
       } else {
-        throw Exception('Gagal menghapus barang');
+        throw Exception('Gagal menghapus data barang');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         isLoading = false;
@@ -163,13 +173,22 @@ class _BarangScreenState extends State<BarangScreen> {
     });
   }
 
+  // Fungsi untuk menampilkan notifikasi sukses
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.green,
+      duration: Duration(seconds: 2),
+    ));
+  }
+
   // Dialog konfirmasi sebelum menghapus barang
   void _showDeleteConfirmationDialog(BuildContext context, String noBarcode) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Konfirmasi Penghapusan"),
+          title: Text("Konfirmasi Hapus"),
           content: Text("Apakah Anda yakin ingin menghapus barang ini?"),
           actions: [
             TextButton(
@@ -183,7 +202,7 @@ class _BarangScreenState extends State<BarangScreen> {
                 deleteBarang(noBarcode);
                 Navigator.pop(context); // Tutup dialog
               },
-              child: Text("Hapus"),
+              child: Text("Hapus", style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -241,7 +260,8 @@ class _BarangScreenState extends State<BarangScreen> {
         ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator()) // Display loading indicator
+          ? Center(
+          child: CircularProgressIndicator()) // Display loading indicator
           : Padding(
         padding: EdgeInsets.all(8.0),
         child: Column(
@@ -277,13 +297,14 @@ class _BarangScreenState extends State<BarangScreen> {
 
                   return Card(
                     elevation: 5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     color: Colors.blueGrey.shade50,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center, // Menjaga konten di tengah secara vertikal
-                        crossAxisAlignment: CrossAxisAlignment.center, // Menjaga konten di tengah secara horizontal
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
                             item['NAMA'],
@@ -292,7 +313,7 @@ class _BarangScreenState extends State<BarangScreen> {
                               fontSize: 16,
                               color: Colors.blueGrey.shade900,
                             ),
-                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                            textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 8),
                           Text(
@@ -300,29 +321,32 @@ class _BarangScreenState extends State<BarangScreen> {
                             style: TextStyle(
                               color: Colors.blueGrey.shade900,
                             ),
-                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                            textAlign: TextAlign.center,
                           ),
                           Text(
                             'Stok: ${item['STOK']}',
                             style: TextStyle(
-                              color: isLowStock ? Colors.red : Colors.blueGrey.shade900,
+                              color: isLowStock ? Colors.red : Colors.blueGrey
+                                  .shade900,
                             ),
-                            textAlign: TextAlign.center, // Mengatur teks agar rata tengah
+                            textAlign: TextAlign.center,
                           ),
-                          Spacer(), // Memberikan ruang kosong agar konten terpusat
+                          Spacer(),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center, // Mengatur tombol edit dan delete agar terpusat
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               IconButton(
                                 icon: Icon(Icons.edit, color: Colors.blue),
                                 onPressed: () {
-                                  _showEditBarangDialog(context, item['NOBARCODE']);
+                                  _showEditBarangDialog(
+                                      context, item['NOBARCODE']);
                                 },
                               ),
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
                                 onPressed: () {
-                                  _showDeleteConfirmationDialog(context, item['NOBARCODE']);
+                                  _showDeleteConfirmationDialog(
+                                      context, item['NOBARCODE']);
                                 },
                               ),
                             ],
@@ -356,53 +380,54 @@ class _BarangScreenState extends State<BarangScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Tambah Barang"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: noBarcodeController,
-              decoration: InputDecoration(labelText: "No Barcode"),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Tambah Barang"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: noBarcodeController,
+                decoration: InputDecoration(labelText: 'No. Barcode'),
+              ),
+              TextField(
+                controller: namaController,
+                decoration: InputDecoration(labelText: 'Nama Barang'),
+              ),
+              TextField(
+                controller: hargaController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Harga'),
+              ),
+              TextField(
+                controller: stokController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Stok'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Batal"),
             ),
-            TextField(
-              controller: namaController,
-              decoration: InputDecoration(labelText: "Nama Barang"),
-            ),
-            TextField(
-              controller: hargaController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: "Harga"),
-            ),
-            TextField(
-              controller: stokController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: "Stok"),
+            TextButton(
+              onPressed: () {
+                addBarang(
+                  noBarcodeController.text,
+                  namaController.text,
+                  double.tryParse(hargaController.text) ?? 0,
+                  int.tryParse(stokController.text) ?? 0,
+                );
+                Navigator.pop(context);
+              },
+              child: Text("Simpan"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Perform validation and then add barang
-              addBarang(
-                noBarcodeController.text,
-                namaController.text,
-                double.tryParse(hargaController.text) ?? 0.0,
-                int.tryParse(stokController.text) ?? 0,
-              );
-              Navigator.pop(context);
-            },
-            child: Text("Tambah"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text("Batal"),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -412,56 +437,60 @@ class _BarangScreenState extends State<BarangScreen> {
     final hargaController = TextEditingController();
     final stokController = TextEditingController();
 
-    final barang = barangList.firstWhere((barang) => barang['NOBARCODE'] == noBarcode);
+    // Isi default nilai
+    final item = barangList.firstWhere((element) =>
+    element['NOBARCODE'] == noBarcode);
 
-    namaController.text = barang['NAMA'];
-    hargaController.text = barang['HARGA'].toString();
-    stokController.text = barang['STOK'].toString();
+    namaController.text = item['NAMA'];
+    hargaController.text = item['HARGA'].toString();
+    stokController.text = item['STOK'].toString();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Edit Barang"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: namaController,
-              decoration: InputDecoration(labelText: "Nama Barang"),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Edit Barang"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: namaController,
+                decoration: InputDecoration(labelText: 'Nama Barang'),
+              ),
+              TextField(
+                controller: hargaController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Harga'),
+              ),
+              TextField(
+                controller: stokController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Stok'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _editBarang(
+                  item['NOBARCODE'],
+                  namaController.text,
+                  double.tryParse(hargaController.text) ?? 0,
+                  int.tryParse(stokController.text) ?? 0,
+                );
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Perbarui"),
             ),
-            TextField(
-              controller: hargaController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: "Harga"),
-            ),
-            TextField(
-              controller: stokController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: "Stok"),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Batal"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _editBarang(
-                noBarcode,
-                namaController.text,
-                double.parse(hargaController.text),
-                int.parse(stokController.text),
-              );
-              Navigator.pop(context);
-            },
-            child: Text("Simpan"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text("Batal"),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
