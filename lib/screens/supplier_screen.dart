@@ -26,7 +26,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
       if (response.statusCode == 200) {
         setState(() {
           supplierList = json.decode(response.body);
-          filteredSupplierList = supplierList; // Set the filtered list to all data initially
+          filteredSupplierList = supplierList;
         });
       } else {
         throw Exception('Gagal mengambil data supplier');
@@ -63,7 +63,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
       );
 
       if (response.statusCode == 200) {
-        fetchSupplierData(); // Refresh the list
+        fetchSupplierData();
       } else {
         throw Exception('Gagal menambah supplier');
       }
@@ -79,11 +79,13 @@ class _SupplierScreenState extends State<SupplierScreen> {
       );
 
       if (response.statusCode == 200) {
-        fetchSupplierData(); // Refresh the list
+        fetchSupplierData();
+        showNotification("Data supplier berhasil dihapus", Colors.green);
       } else {
         throw Exception('Gagal menghapus supplier');
       }
     } catch (e) {
+      showNotification("Gagal menghapus data supplier", Colors.red);
       print(e);
     }
   }
@@ -102,16 +104,53 @@ class _SupplierScreenState extends State<SupplierScreen> {
       );
 
       if (response.statusCode == 200) {
-        fetchSupplierData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Supplier berhasil diperbarui")),
-        );
+        fetchSupplierData();
+        showNotification("Supplier berhasil diperbarui", Colors.green);
       } else {
         throw Exception('Gagal memperbarui supplier');
       }
     } catch (e) {
+      showNotification("Gagal memperbarui data supplier", Colors.red);
       print(e);
     }
+  }
+
+  void showNotification(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+      ),
+    );
+  }
+
+  void confirmDeleteSupplier(BuildContext context, int idSup) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Konfirmasi Hapus"),
+          content: Text("Apakah Anda yakin ingin menghapus data supplier ini?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                deleteSupplier(idSup);
+              },
+              child: Text("Hapus", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -129,7 +168,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
             child: TextField(
               controller: searchController,
               onChanged: (query) {
-                filterSupplier(query); // Menjalankan fungsi filter saat input berubah
+                filterSupplier(query);
               },
               decoration: InputDecoration(
                 labelText: 'Cari Supplier',
@@ -143,7 +182,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
           ),
           Expanded(
             child: filteredSupplierList.isEmpty
-                ? Center(child: CircularProgressIndicator()) // Loading indicator
+                ? Center(child: CircularProgressIndicator())
                 : ListView.builder(
               itemCount: filteredSupplierList.length,
               itemBuilder: (context, index) {
@@ -175,7 +214,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                           IconButton(
                             icon: Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              deleteSupplier(item['IDSUP']);
+                              confirmDeleteSupplier(context, item['IDSUP']);
                             },
                           ),
                         ],
@@ -190,7 +229,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddSupplierDialog(context); // Menampilkan dialog tambah supplier
+          _showAddSupplierDialog(context);
         },
         child: Icon(Icons.add),
         backgroundColor: Colors.blueAccent,
