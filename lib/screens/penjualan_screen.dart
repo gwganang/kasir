@@ -32,7 +32,12 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
       if (response.statusCode == 200) {
         setState(() {
           penjualanList = json.decode(response.body);
-          filteredPenjualanList = penjualanList;
+          filteredPenjualanList = List.from(penjualanList);  // Clone the list for filtering
+
+          // Sorting by NONOTA (ascending order)
+          filteredPenjualanList.sort((a, b) {
+            return int.parse(a['NONOTA'].toString()).compareTo(int.parse(b['NONOTA'].toString()));
+          });
         });
       } else {
         throw Exception('Failed to load penjualan');
@@ -63,10 +68,19 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
         filteredPenjualanList = penjualanList
             .where((penjualan) => penjualan['BARANG'].toLowerCase().contains(query.toLowerCase()))
             .toList();
+
+        // Sort the filtered list after applying filter
+        filteredPenjualanList.sort((a, b) {
+          return int.parse(a['NONOTA'].toString()).compareTo(int.parse(b['NONOTA'].toString()));
+        });
       });
     } else {
       setState(() {
-        filteredPenjualanList = penjualanList;
+        filteredPenjualanList = List.from(penjualanList);  // Reset the filtered list
+        // Sort the list again
+        filteredPenjualanList.sort((a, b) {
+          return int.parse(a['NONOTA'].toString()).compareTo(int.parse(b['NONOTA'].toString()));
+        });
       });
     }
   }
@@ -83,13 +97,21 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
       );
       if (response.statusCode == 200) {
         fetchPenjualanData(); // Refresh the list
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Penjualan berhasil ditambahkan')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Penjualan berhasil ditambahkan'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ));
       } else {
         throw Exception('Gagal menambah penjualan');
       }
     } catch (e) {
       print(e);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi kesalahan!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Terjadi kesalahan!'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 2),
+      ));
     }
   }
 
@@ -183,7 +205,11 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
                   });
                   Navigator.of(context).pop();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Harap isi semua data')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Harap isi semua data'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 2),
+                  ));
                 }
               },
               child: Text('Tambah'),
@@ -207,13 +233,13 @@ class _PenjualanScreenState extends State<PenjualanScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('No Nota: ${penjualan['NONOTA']}', style: TextStyle(color: Colors.black)),
+              Text('No Nota          : ${penjualan['NONOTA']}', style: TextStyle(color: Colors.black)),
               SizedBox(height: 8),
-              Text('Nama Barang: ${penjualan['BARANG']}', style: TextStyle(color: Colors.black)),
+              Text('Nama Barang : ${penjualan['BARANG']}', style: TextStyle(color: Colors.black)),
               SizedBox(height: 8),
-              Text('Jumlah: ${penjualan['JUMLAH']}', style: TextStyle(color: Colors.black)),
+              Text('Jumlah            : ${penjualan['JUMLAH']}', style: TextStyle(color: Colors.black)),
               SizedBox(height: 8),
-              Text('Total: Rp $formattedTotal', style: TextStyle(color: Colors.black)),
+              Text('Total                : Rp $formattedTotal', style: TextStyle(color: Colors.black)),
             ],
           ),
           actions: [
