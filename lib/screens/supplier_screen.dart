@@ -12,6 +12,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
   List<dynamic> supplierList = [];
   List<dynamic> filteredSupplierList = [];
   TextEditingController searchController = TextEditingController();
+  bool isLoading = false;  // Declare the isLoading variable
 
   @override
   void initState() {
@@ -51,6 +52,10 @@ class _SupplierScreenState extends State<SupplierScreen> {
   }
 
   Future<void> addSupplier(String nama, String alamat, String nohp) async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       final response = await http.post(
         Uri.parse(AppConfig.baseUrl + 'supplier.php'),
@@ -64,12 +69,29 @@ class _SupplierScreenState extends State<SupplierScreen> {
 
       if (response.statusCode == 200) {
         fetchSupplierData();
+        _showSuccessSnackbar("Supplier berhasil ditambah");
       } else {
         throw Exception('Gagal menambah supplier');
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> deleteSupplier(int idSup) async {
@@ -118,11 +140,10 @@ class _SupplierScreenState extends State<SupplierScreen> {
   void showNotification(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
-      backgroundColor: Colors.green,
+      backgroundColor: color,
       duration: Duration(seconds: 2),
     ));
   }
-
 
   void confirmDeleteSupplier(BuildContext context, int idSup) {
     showDialog(
