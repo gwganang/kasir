@@ -82,7 +82,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
         fetchSupplierData();
         showNotification("Data supplier berhasil dihapus", Colors.green);
       } else {
-        throw Exception('Gagal menghapus supplier');
+        throw Exception('Gagal menghapus data supplier');
       }
     } catch (e) {
       showNotification("Gagal menghapus data supplier", Colors.red);
@@ -105,9 +105,9 @@ class _SupplierScreenState extends State<SupplierScreen> {
 
       if (response.statusCode == 200) {
         fetchSupplierData();
-        showNotification("Supplier berhasil diperbarui", Colors.green);
+        showNotification("Data supplier berhasil diperbarui", Colors.green);
       } else {
-        throw Exception('Gagal memperbarui supplier');
+        throw Exception('Gagal memperbarui data supplier');
       }
     } catch (e) {
       showNotification("Gagal memperbarui data supplier", Colors.red);
@@ -116,15 +116,13 @@ class _SupplierScreenState extends State<SupplierScreen> {
   }
 
   void showNotification(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: color,
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.green,
+      duration: Duration(seconds: 2),
+    ));
   }
+
 
   void confirmDeleteSupplier(BuildContext context, int idSup) {
     showDialog(
