@@ -1,4 +1,4 @@
 class AppConfig {
   // URL dasar API untuk aplikasi
-  static const String baseUrl = 'http://192.168.233.102/kasir_api/';
+  static const String baseUrl = 'http://192.168.1.5/kasir_api/';
 }

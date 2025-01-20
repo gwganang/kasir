@@ -56,6 +56,19 @@ class _BarangScreenState extends State<BarangScreen> {
     });
   }
 
+  // Fungsi untuk menyortir barang berdasarkan pilihan
+  void sortBarang(String option) {
+    setState(() {
+      if (option == 'Nama (A-Z)') {
+        filteredBarangList.sort((a, b) => a['NAMA'].compareTo(b['NAMA']));
+      } else if (option == 'Harga (Murah ke Mahal)') {
+        filteredBarangList.sort((a, b) => a['HARGA'].compareTo(b['HARGA']));
+      } else if (option == 'Stok (Banyak ke Sedikit)') {
+        filteredBarangList.sort((a, b) => b['STOK'].compareTo(a['STOK']));
+      }
+    });
+  }
+
   // Fungsi untuk menambah barang
   Future<void> addBarang(String noBarcode, String nama, double harga,
       int stok) async {
@@ -93,6 +106,66 @@ class _BarangScreenState extends State<BarangScreen> {
         isLoading = false;
       });
     }
+  }
+
+  // Fungsi untuk menampilkan dialog tambah barang
+  void _showAddBarangDialog(BuildContext context) {
+    final noBarcodeController = TextEditingController();
+    final namaController = TextEditingController();
+    final hargaController = TextEditingController();
+    final stokController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Tambah Barang"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: noBarcodeController,
+                decoration: InputDecoration(labelText: 'No. Barcode'),
+              ),
+              TextField(
+                controller: namaController,
+                decoration: InputDecoration(labelText: 'Nama Barang'),
+              ),
+              TextField(
+                controller: hargaController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Harga'),
+              ),
+              TextField(
+                controller: stokController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Stok'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () {
+                addBarang(
+                  noBarcodeController.text,
+                  namaController.text,
+                  double.tryParse(hargaController.text) ?? 0,
+                  int.tryParse(stokController.text) ?? 0,
+                );
+                Navigator.pop(context);
+              },
+              child: Text("Simpan"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Fungsi untuk mengedit barang
@@ -134,6 +207,69 @@ class _BarangScreenState extends State<BarangScreen> {
     }
   }
 
+  // Fungsi untuk menampilkan dialog edit barang
+  void _showEditBarangDialog(BuildContext context, String noBarcode) {
+    final namaController = TextEditingController();
+    final hargaController = TextEditingController();
+    final stokController = TextEditingController();
+
+    // Isi default nilai
+    final item = barangList.firstWhere((element) =>
+    element['NOBARCODE'] == noBarcode);
+
+    namaController.text = item['NAMA'];
+    hargaController.text = item['HARGA'].toString();
+    stokController.text = item['STOK'].toString();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Edit Barang"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: namaController,
+                decoration: InputDecoration(labelText: 'Nama Barang'),
+              ),
+              TextField(
+                controller: hargaController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Harga'),
+              ),
+              TextField(
+                controller: stokController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Stok'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _editBarang(
+                  item['NOBARCODE'],
+                  namaController.text,
+                  double.tryParse(hargaController.text) ?? 0,
+                  int.tryParse(stokController.text) ?? 0,
+                );
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Perbarui"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Batal"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Fungsi untuk menghapus barang
   Future<void> deleteBarang(String noBarcode) async {
     setState(() {
@@ -158,19 +294,6 @@ class _BarangScreenState extends State<BarangScreen> {
         isLoading = false;
       });
     }
-  }
-
-  // Fungsi untuk menyortir barang berdasarkan pilihan
-  void sortBarang(String option) {
-    setState(() {
-      if (option == 'Nama (A-Z)') {
-        filteredBarangList.sort((a, b) => a['NAMA'].compareTo(b['NAMA']));
-      } else if (option == 'Harga (Murah ke Mahal)') {
-        filteredBarangList.sort((a, b) => a['HARGA'].compareTo(b['HARGA']));
-      } else if (option == 'Stok (Banyak ke Sedikit)') {
-        filteredBarangList.sort((a, b) => b['STOK'].compareTo(a['STOK']));
-      }
-    });
   }
 
   // Fungsi untuk menampilkan notifikasi sukses
@@ -368,129 +491,6 @@ class _BarangScreenState extends State<BarangScreen> {
         child: Icon(Icons.add),
         backgroundColor: Colors.blue,
       ),
-    );
-  }
-
-  // Fungsi untuk menampilkan dialog tambah barang
-  void _showAddBarangDialog(BuildContext context) {
-    final noBarcodeController = TextEditingController();
-    final namaController = TextEditingController();
-    final hargaController = TextEditingController();
-    final stokController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Tambah Barang"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: noBarcodeController,
-                decoration: InputDecoration(labelText: 'No. Barcode'),
-              ),
-              TextField(
-                controller: namaController,
-                decoration: InputDecoration(labelText: 'Nama Barang'),
-              ),
-              TextField(
-                controller: hargaController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Harga'),
-              ),
-              TextField(
-                controller: stokController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Stok'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text("Batal"),
-            ),
-            TextButton(
-              onPressed: () {
-                addBarang(
-                  noBarcodeController.text,
-                  namaController.text,
-                  double.tryParse(hargaController.text) ?? 0,
-                  int.tryParse(stokController.text) ?? 0,
-                );
-                Navigator.pop(context);
-              },
-              child: Text("Simpan"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Fungsi untuk menampilkan dialog edit barang
-  void _showEditBarangDialog(BuildContext context, String noBarcode) {
-    final namaController = TextEditingController();
-    final hargaController = TextEditingController();
-    final stokController = TextEditingController();
-
-    // Isi default nilai
-    final item = barangList.firstWhere((element) =>
-    element['NOBARCODE'] == noBarcode);
-
-    namaController.text = item['NAMA'];
-    hargaController.text = item['HARGA'].toString();
-    stokController.text = item['STOK'].toString();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Edit Barang"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: namaController,
-                decoration: InputDecoration(labelText: 'Nama Barang'),
-              ),
-              TextField(
-                controller: hargaController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Harga'),
-              ),
-              TextField(
-                controller: stokController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Stok'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _editBarang(
-                  item['NOBARCODE'],
-                  namaController.text,
-                  double.tryParse(hargaController.text) ?? 0,
-                  int.tryParse(stokController.text) ?? 0,
-                );
-                Navigator.pop(context); // Tutup dialog
-              },
-              child: Text("Perbarui"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Tutup dialog
-              },
-              child: Text("Batal"),
-            ),
-          ],
-        );
-      },
     );
   }
 }

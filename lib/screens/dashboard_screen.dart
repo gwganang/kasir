@@ -23,6 +23,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  Future<void> _confirmExit() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi Keluar'),
+        content: Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit ?? false) {
+      Navigator.pushNamed(context, '/'); // Navigasi kembali ke halaman awal
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     text: 'Barang',
                     icon: Icons.inventory_2,
                     onPressed: () {
-                      Navigator.pushNamed(context, '/barang');  // Navigasi ke halaman Barang
+                      Navigator.pushNamed(context, '/barang'); // Navigasi ke halaman Barang
                     },
                   ),
                 ),
@@ -68,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     text: 'Supplier',
                     icon: Icons.business,
                     onPressed: () {
-                      Navigator.pushNamed(context, '/supplier');  // Navigasi ke halaman Supplier
+                      Navigator.pushNamed(context, '/supplier'); // Navigasi ke halaman Supplier
                     },
                   ),
                 ),
@@ -83,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     text: 'Penjualan',
                     icon: Icons.shopping_cart,
                     onPressed: () {
-                      Navigator.pushNamed(context, '/penjualan');  // Navigasi ke halaman Penjualan
+                      Navigator.pushNamed(context, '/penjualan'); // Navigasi ke halaman Penjualan
                     },
                   ),
                 ),
@@ -97,9 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: CustomButton(
                     text: 'Keluar',
                     icon: Icons.exit_to_app,
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/');  // Navigasi kembali ke halaman home
-                    },
+                    onPressed: _confirmExit, // Konfirmasi keluar aplikasi
                   ),
                 ),
               ],
