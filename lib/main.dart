@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart'; // Import tema
-import 'screens/home_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/barang_screen.dart';
 import 'screens/supplier_screen.dart';
